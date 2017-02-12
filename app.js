@@ -11,6 +11,21 @@ let logger = new (w.Logger)({
 
 let SwaggerExpress = require('swagger-express-mw');
 let app = require('express')();
+let server = require('http').createServer(app);
+let io = require('socket.io').listen(server);
+
+io.on('connection', function(client) {
+  io.emit('newNotification', {hello: 'world'});
+  io.on('evt', function(data) {
+    logger.info('io event raised with: ', data);
+  });
+  // client.on('event', function(data) {
+  //   console.info('new data!');
+  //   console.info(data);
+  // });
+  client.on('disconnect', function() {});
+});
+
 module.exports = app;
 
 let config = {
@@ -25,6 +40,7 @@ SwaggerExpress.create(config, function(err, swag) {
   swag.register(app);
 
   let port = process.env.SERVICE_PORT;
-  app.listen(port);
+  server.listen(port);
+  // app.listen(port);
   logger.info('notification-service running on port ' + port + '...');
 });
