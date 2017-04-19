@@ -1,7 +1,7 @@
 swagger: "2.0"
 info:
   version: "0.0.1"
-  title: docStack Notifications API
+  title: DocStack Notifications API
 # during dev, should point to your local machine
 host: localhost:8999
 # basePath prefixes all resource paths
@@ -18,33 +18,44 @@ consumes:
 produces:
   - application/json
 paths:
-  /notification:
-    x-swagger-router-controller: notifications
+  /subscription:
+    x-swagger-router-controller: subscriptions
     post:
-      description: Receives a notification
-      operationId: notification
+      description: Creates a subscription
+      operationId: addSubscription
       parameters:
-        - name: notification
+        - name: subscription
           in: body
-          description: new notif
+          description: new subscription
+          required: true
           schema:
-            $ref: '#/definitions/NewNotification'
+            $ref: '#/definitions/NewSubscription'
       responses:
-        "200":
+        200:
           description: Success
           schema:
-            $ref: '#/definitions/NewNotificationResponse'
+            $ref: '#/definitions/NewSubscriptionResponse'
+        400:
+          description: Invalid request
         default:
-          description: Bad request
+          description: An error has occurred
   /swagger:
     x-swagger-pipe: swagger_raw
 definitions:
-  NewNotification:
+  NewSubscription:
     type: object
     properties:
-      client:
+      topic:
         type: string
-  NewNotificationResponse:
+      url:
+        type: string
+      argument:
+        type: string
+    required:
+      - topic
+      - url
+      - argument
+  NewSubscriptionResponse:
     type: object
     properties:
       message:

@@ -1,32 +1,37 @@
 'use strict';
 require('dotenv').config({silent: true});
 
-let w = require('winston');
-let logger = new (w.Logger)({
-  transports: [
-    new (w.transports.Console)(),
-    new (w.transports.File)({filename: 'somefile.log'})
-  ]
-});
+const
+    app = require('express')(),
+    log = require('winston'),
+    SwaggerExpress = require('swagger-express-mw'),
+    DocstackRethink = require('rethinkdb-node-middleware'),
+    SubscriptionService = require('./api/lib/subscriptionService');
 
-let SwaggerExpress = require('swagger-express-mw');
-let app = require('express')();
-let server = require('http').createServer(app);
-let io = require('socket.io').listen(server);
-
-io.on('connection', function(client) {
-  io.emit('newNotification', {hello: 'world'});
-  io.on('evt', function(data) {
-    logger.info('io event raised with: ', data);
-  });
-  // client.on('event', function(data) {
-  //   console.info('new data!');
-  //   console.info(data);
-  // });
-  client.on('disconnect', function() {});
+log.level = process.env.LOG_LEVEL || 'error';
+let dbConfig = {
+            host: process.env.DB_HOST,
+            port: process.env.DB_PORT,
+            user: process.env.DB_USER,
+            password: process.env.DB_PASSWORD
+        };
+let db = new DocstackRethink(dbConfig);
+db.DB = 'pubsub';
+db.TABLE = {
+    SUBSCRIPTIONS: 'subscriptions'
+};
+db.initDatabase(db.DB).then(() => {
+    db.initTable(db.TABLE.SUBSCRIPTIONS, db.DB);
 });
 
 module.exports = app;
+const subscriptionService = new SubscriptionService(db);
+
+app.use((req, res, next) => {
+    req.subscriptionService = subscriptionService;
+    req.log = log;
+    next();
+});
 
 let config = {
   appRoot: __dirname
@@ -39,8 +44,7 @@ SwaggerExpress.create(config, function(err, swag) {
 
   swag.register(app);
 
-  let port = process.env.SERVICE_PORT;
-  server.listen(port);
-  // app.listen(port);
-  logger.info('notification-service running on port ' + port + '...');
+  const port = process.env.PORT || 80;
+  app.listen(port);
+  log.info('notification-service running on port ' + port + '...');
 });
