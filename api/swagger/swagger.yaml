@@ -18,6 +18,22 @@ consumes:
 produces:
   - application/json
 paths:
+  /subscriptions/{topic}:
+    x-swagger-router-controller: subscriptions
+    get:
+      description: Gets a list of subscriptions per specified topic
+      operationId: getSubscriptionsByTopic
+      parameters:
+        - name: topic
+          in: path
+          description: topic to fetch subscriptions for
+          required: true
+          type: string
+      responses:
+        200: 
+          description: OK
+          schema: 
+            $ref: '#/definitions/SubscriptionList'
   /subscription:
     x-swagger-router-controller: subscriptions
     post:
@@ -29,7 +45,7 @@ paths:
           description: new subscription
           required: true
           schema:
-            $ref: '#/definitions/NewSubscription'
+            $ref: '#/definitions/Subscription'
       responses:
         200:
           description: Success
@@ -42,7 +58,11 @@ paths:
   /swagger:
     x-swagger-pipe: swagger_raw
 definitions:
-  NewSubscription:
+  SubscriptionList:
+    type: array
+    items: 
+      $ref: '#/definitions/Subscription'
+  Subscription:
     type: object
     properties:
       topic:
